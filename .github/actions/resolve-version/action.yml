@@ -1,0 +1,44 @@
+name: Resolve Version
+description: Resolve version from project files
+
+inputs:
+  version_source:
+    description: "Version source type"
+    required: false
+    default: auto
+  version_file:
+    description: "Version file path for version_file mode"
+    required: false
+    default: VERSION
+  version_command:
+    description: "Shell command that prints version (trusted callers only)"
+    required: false
+    default: ""
+  tag_prefix:
+    description: "Tag prefix"
+    required: false
+    default: v
+
+outputs:
+  version_source:
+    description: "Resolved version source"
+    value: ${{ steps.version.outputs.version_source }}
+  version:
+    description: "Resolved version"
+    value: ${{ steps.version.outputs.version }}
+  tag:
+    description: "Resolved tag"
+    value: ${{ steps.version.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve version and tag
+      id: version
+      env:
+        INPUT_VERSION_SOURCE: ${{ inputs.version_source }}
+        INPUT_VERSION_FILE: ${{ inputs.version_file }}
+        INPUT_VERSION_COMMAND: ${{ inputs.version_command }}
+        INPUT_TAG_PREFIX: ${{ inputs.tag_prefix }}
+      shell: bash
+      run: bash "${{ github.action_path }}/resolve-version.sh"

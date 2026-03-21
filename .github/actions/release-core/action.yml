@@ -1,0 +1,161 @@
+name: Release Core
+description: Create tag and GitHub Release
+
+inputs:
+  tag:
+    description: "Release tag"
+    required: true
+  create_tag:
+    description: "Create tag if missing"
+    required: false
+    default: "true"
+  generate_notes:
+    description: "Generate release notes automatically"
+    required: false
+    default: "true"
+  tag_message:
+    description: "Annotated tag message"
+    required: false
+    default: ""
+  force_released_output:
+    description: "Return released=true even when no new tag/release is created"
+    required: false
+    default: "false"
+
+outputs:
+  released:
+    description: "Whether this run should trigger downstream publish jobs"
+    value: ${{ steps.finalize.outputs.released }}
+  tag:
+    description: "Release tag"
+    value: ${{ steps.finalize.outputs.tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Validate tag input
+      env:
+        TAG: ${{ inputs.tag }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        if [ -z "$TAG" ]; then
+          echo "tag input must not be empty"
+          exit 1
+        fi
+        if ! [[ "$TAG" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+          echo "tag contains invalid characters: $TAG"
+          exit 1
+        fi
+
+    - name: Configure git identity
+      if: inputs.create_tag == 'true'
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+    - name: Create tag if not exists
+      id: tag_result
+      if: inputs.create_tag == 'true'
+      env:
+        TAG: ${{ inputs.tag }}
+        TAG_MESSAGE: ${{ inputs.tag_message }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        TAG_CREATED=false
+
+        if [ -z "$TAG_MESSAGE" ]; then
+          TAG_MESSAGE="Release $TAG"
+        fi
+
+        if git show-ref --verify --quiet "refs/tags/$TAG"; then
+          echo "Tag $TAG already exists locally, skipping"
+          echo "tag_created=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        if git ls-remote --tags origin "refs/tags/$TAG" | grep -Fq "refs/tags/$TAG"; then
+          echo "Tag $TAG already exists on remote, skipping"
+          echo "tag_created=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        git fetch --tags --force
+        if git show-ref --verify --quiet "refs/tags/$TAG"; then
+          echo "Tag $TAG already exists after fetch, skipping"
+          echo "tag_created=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        git tag -a "$TAG" -m "$TAG_MESSAGE"
+        if git push origin "refs/tags/$TAG"; then
+          TAG_CREATED=true
+          echo "Created and pushed tag $TAG"
+        elif git ls-remote --tags origin "refs/tags/$TAG" | grep -Fq "refs/tags/$TAG"; then
+          echo "Tag $TAG was created by another run, skipping"
+        else
+          echo "::error::Failed to push tag $TAG"
+          exit 1
+        fi
+        echo "tag_created=$TAG_CREATED" >> "$GITHUB_OUTPUT"
+
+    - name: Create release
+      id: release_result
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ inputs.tag }}
+        GENERATE_NOTES: ${{ inputs.generate_notes }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        RELEASE_CREATED=false
+
+        if gh release view "$TAG" > /dev/null 2>&1; then
+          echo "Release $TAG already exists, skipping"
+          echo "release_created=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        create_args=(--verify-tag)
+        if [ "$GENERATE_NOTES" = "true" ]; then
+          create_args+=(--generate-notes)
+        fi
+
+        if gh release create "$TAG" "${create_args[@]}"; then
+          RELEASE_CREATED=true
+          echo "Created release $TAG"
+        elif gh release view "$TAG" > /dev/null 2>&1; then
+          echo "Release $TAG was created by another run, skipping"
+        else
+          echo "::error::Failed to create release $TAG"
+          exit 1
+        fi
+        echo "release_created=$RELEASE_CREATED" >> "$GITHUB_OUTPUT"
+
+    - name: Finalize outputs
+      id: finalize
+      env:
+        TAG: ${{ inputs.tag }}
+        TAG_CREATED: ${{ steps.tag_result.outputs.tag_created }}
+        RELEASE_CREATED: ${{ steps.release_result.outputs.release_created }}
+        FORCE_RELEASED_OUTPUT: ${{ inputs.force_released_output }}
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        tag_created="${TAG_CREATED:-false}"
+        release_created="${RELEASE_CREATED:-false}"
+        force_released_output="${FORCE_RELEASED_OUTPUT:-false}"
+        released=false
+
+        if [ "$tag_created" = "true" ] || [ "$release_created" = "true" ]; then
+          released=true
+        fi
+        if [ "$force_released_output" = "true" ]; then
+          released=true
+        fi
+
+        echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+        echo "released=$released" >> "$GITHUB_OUTPUT"

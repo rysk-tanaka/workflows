@@ -1,0 +1,84 @@
+name: Release On Version Change
+
+on:
+  workflow_call:
+    inputs:
+      version_source:
+        description: "Version source type"
+        required: false
+        default: auto
+        type: string
+      version_file:
+        description: "Version file path for version_file mode"
+        required: false
+        default: VERSION
+        type: string
+      version_command:
+        description: "Shell command that prints version for command mode"
+        required: false
+        default: ""
+        type: string
+      tag_prefix:
+        description: "Tag prefix"
+        required: false
+        default: v
+        type: string
+      generate_notes:
+        description: "Generate release notes automatically"
+        required: false
+        default: true
+        type: boolean
+      create_tag:
+        description: "Create tag if missing"
+        required: false
+        default: true
+        type: boolean
+      force_released_output:
+        description: "Return released=true even when no new tag/release is created"
+        required: false
+        default: false
+        type: boolean
+    outputs:
+      version_source:
+        description: "Resolved version source"
+        value: ${{ jobs.release.outputs.version_source }}
+      version:
+        description: "Resolved version"
+        value: ${{ jobs.release.outputs.version }}
+      tag:
+        description: "Release tag"
+        value: ${{ jobs.release.outputs.tag }}
+      released:
+        description: "Whether this run should trigger downstream publish jobs"
+        value: ${{ jobs.release.outputs.released }}
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version_source: ${{ steps.resolve.outputs.version_source }}
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      released: ${{ steps.release.outputs.released }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/resolve-version
+        id: resolve
+        with:
+          version_source: ${{ inputs.version_source }}
+          version_file: ${{ inputs.version_file }}
+          version_command: ${{ inputs.version_command }}
+          tag_prefix: ${{ inputs.tag_prefix }}
+      - uses: ./.github/actions/release-core
+        id: release
+        with:
+          tag: ${{ steps.resolve.outputs.tag }}
+          create_tag: ${{ inputs.create_tag }}
+          generate_notes: ${{ inputs.generate_notes }}
+          tag_message: Release ${{ steps.resolve.outputs.tag }}
+          force_released_output: ${{ inputs.force_released_output }}

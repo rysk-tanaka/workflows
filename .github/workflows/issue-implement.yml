@@ -1,0 +1,152 @@
+name: Issue Implement
+
+on:
+  workflow_call:
+    inputs:
+      node_version:
+        description: "Node.js version"
+        required: false
+        default: "24"
+        type: string
+      package_manager:
+        description: "Package manager (pnpm, npm, yarn, none)"
+        required: false
+        default: none
+        type: string
+      install_command:
+        description: "Custom install command (overrides default for package_manager)"
+        required: false
+        default: ""
+        type: string
+      claude_args:
+        description: "Full claude_args string"
+        required: true
+        type: string
+      prompt:
+        description: "Full prompt string"
+        required: true
+        type: string
+      allowed_bots:
+        description: "Bots allowed to trigger this workflow"
+        required: false
+        default: "claude[bot]"
+        type: string
+      timeout_minutes:
+        description: "Job timeout in minutes"
+        required: false
+        default: 30
+        type: number
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Check for existing implementation PR
+        id: guard
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const pullRequests = await github.paginate(
+              github.rest.pulls.list,
+              {
+                owner,
+                repo,
+                state: "open",
+                per_page: 100,
+              }
+            );
+
+            const closesPattern = new RegExp(
+              `(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\\s+\`?#${issueNumber}\`?\\b`,
+              "i"
+            );
+
+            const existingPr = pullRequests.find((pr) =>
+              closesPattern.test(pr.body ?? "") ||
+              pr.head?.ref === `implement-issue-${issueNumber}`
+            );
+
+            if (existingPr) {
+              core.info(
+                `Existing PR found for issue #${issueNumber}: #${existingPr.number}`
+              );
+              core.setOutput("skip", "true");
+              core.setOutput("existing_pr_number", String(existingPr.number));
+              return;
+            }
+
+            core.setOutput("skip", "false");
+
+      - name: Skip when implementation PR already exists
+        if: steps.guard.outputs.skip == 'true'
+        run: |
+          echo "Existing PR: #${{ steps.guard.outputs.existing_pr_number }}"
+
+      - name: Enable corepack
+        if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
+        run: corepack enable ${{ inputs.package_manager }}
+
+      - name: Setup Node.js
+        if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: ${{ inputs.package_manager }}
+
+      - name: Install dependencies
+        if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
+        run: ${{ inputs.install_command != '' && inputs.install_command || format('{0} install --frozen-lockfile', inputs.package_manager) }}
+
+      - name: Configure git identity
+        if: steps.guard.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Implement issue with Claude
+        if: steps.guard.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: ${{ inputs.allowed_bots }}
+          claude_args: ${{ inputs.claude_args }}
+          prompt: ${{ inputs.prompt }}
+
+      - name: Post report to issue
+        if: (success() || failure()) && steps.guard.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -s "$GITHUB_STEP_SUMMARY" ]; then
+            SUMMARY_SIZE=$(wc -c < "$GITHUB_STEP_SUMMARY")
+            if [ "$SUMMARY_SIZE" -le 65000 ]; then
+              gh issue comment "${{ github.event.issue.number }}" \
+                --body-file "$GITHUB_STEP_SUMMARY"
+            else
+              gh issue comment "${{ github.event.issue.number }}" \
+                --body "実装レポート（サマリーが長すぎるため省略: ${{ job.status }}）。${RUN_URL} @${{ github.repository_owner }}"
+            fi
+          elif [ "${{ job.status }}" = "failure" ]; then
+            gh issue comment "${{ github.event.issue.number }}" \
+              --body "自動実装に失敗しました。${RUN_URL} @${{ github.repository_owner }}"
+          fi

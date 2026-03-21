@@ -1,0 +1,78 @@
+name: Issue Scan
+
+on:
+  workflow_call:
+    inputs:
+      claude_model:
+        description: "Claude model to use"
+        required: false
+        default: claude-sonnet-4-6
+        type: string
+      max_turns:
+        description: "Maximum number of turns for Claude"
+        required: false
+        default: 25
+        type: number
+      prompt:
+        description: "Override default prompt (empty = use built-in default)"
+        required: false
+        default: ""
+        type: string
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+permissions:
+  issues: write
+  contents: read
+  id-token: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Scan open issues
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--max-turns ${{ inputs.max_turns }} --model ${{ inputs.claude_model }} --allowed-tools "Write,Bash(gh issue list *),Bash(gh issue view *),Bash(gh issue comment * --body-file *),Bash(gh issue edit * --add-label *),Bash(gh label list *),Bash(gh label create *)"'
+          prompt: ${{ inputs.prompt != '' && inputs.prompt || 'あなたは Issue トリアージ担当です。以下の手順に従ってください。
+
+            ## 手順
+
+            1. `gh issue list --state open --json number,title,labels --limit 50` で open issue を取得
+            2. 以下のラベルが付いている issue はスキップ: `claude-scanned`, `claude-implement`, `difficulty/easy`, `difficulty/medium`, `difficulty/hard`
+            3. スキップ対象外の issue から最大3件を選び、各 issue の内容を `gh issue view <number>` で確認
+            4. 各 issue を難易度判定する
+               - easy: 単一ファイルの小さな変更、明確な修正箇所、テンプレートやドキュメントの軽微な修正
+               - medium: 複数ファイルにまたがる変更、設計判断が必要、テストの追加・修正が必要
+               - hard: アーキテクチャ変更、外部依存の追加、大規模なリファクタリング、`.github/workflows/` の変更（GitHub App トークンに workflows 権限がなく自動実装で push できないため）
+            5. ラベルが存在しない場合は `gh label create --force` で作成してから付与する
+            6. 難易度に応じてラベルを付与
+               `claude-implement` は issue-implement ワークフローのトリガーになるため、他のラベルをすべて付与した後に最後に付与すること。同時に複数ラベルを付与すると concurrency の pending キャンセルで実装ワークフローが起動しない場合がある。
+               - easy → `difficulty/easy` → `claude-scanned` → `claude-implement`
+               - medium → `difficulty/medium` → `claude-scanned`
+               - hard → `difficulty/hard` → `claude-scanned`
+            7. 各 issue に日本語で判定理由をコメント（`gh issue comment`）
+
+            ## コメントのフォーマット
+
+            ```text
+            ## 自動トリアージ結果
+
+            難易度: easy / medium / hard
+            理由: （判定理由を簡潔に記述）
+            ```
+
+            ## 注意事項
+
+            - ラベル付与とコメント以外の変更は行わないでください
+            - 対象 issue が0件の場合は何もせず終了してください
+            - `gh issue view` は1コマンドにつき1件のみ実行してください（複数コマンドを `&&` や `;` で結合しない）
+            - `gh issue comment` は `--body-file` フラグを使用してください。本文を `/tmp/comment-<number>.md` に Write ツールで書き出してから `gh issue comment <number> --body-file /tmp/comment-<number>.md` で投稿してください（`--body` や `-b` は使用しない）' }}

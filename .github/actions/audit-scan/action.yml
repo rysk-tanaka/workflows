@@ -1,0 +1,16 @@
+name: Audit Scan
+description: Parse pnpm audit JSON and manage GitHub Issues for vulnerabilities
+
+inputs:
+  audit_file:
+    description: "Path to pnpm audit JSON output file"
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Scan and create issues
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: bash "${{ github.action_path }}/audit-scan.sh" "${{ inputs.audit_file }}"

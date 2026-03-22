@@ -1,35 +1,41 @@
 # workflows
 
-Reusable GitHub Actions workflows and composite actions for personal projects.
+個人プロジェクト向けの再利用可能な GitHub Actions
+ワークフローとコンポジットアクション集。
 
 ## Reusable Workflows
 
-| Workflow | Description |
+| Workflow | 説明 |
 | --- | --- |
-| `release-on-version-change.yml` | Detect version changes and create GitHub Release |
-| `claude.yml` | Respond to `@claude` mentions on issues/PRs |
-| `claude-code-review.yml` | Automated code review on labeled PRs |
-| `issue-scan.yml` | Triage open issues with Claude |
-| `issue-implement.yml` | Auto-implement issues with Claude |
-| `dependabot-scan.yml` | Run `pnpm audit` and manage vulnerability issues |
+| `release-on-version-change.yml` | バージョン変更を検知し GitHub Release を作成 |
+| `claude.yml` | Issue/PR での `@claude` メンションに応答 |
+| `claude-code-review.yml` | ラベル付き PR の自動コードレビュー |
+| `issue-scan.yml` | Claude による open issue のトリアージ |
+| `issue-implement.yml` | Claude による issue の自動実装 |
+| `dependabot-scan.yml` | `pnpm audit` で脆弱性を検出し Issue 管理 |
 
 ## Composite Actions
 
-| Action | Description |
+| Action | 説明 |
 | --- | --- |
-| `resolve-version` | Resolve version from package.json / pyproject.toml / Cargo.toml / VERSION |
-| `release-core` | Create git tag and GitHub Release (idempotent) |
-| `audit-scan` | Parse audit JSON and manage GitHub Issues for vulnerabilities |
+| `resolve-version` | package.json / pyproject.toml / Cargo.toml / VERSION からバージョン取得 |
+| `release-core` | Git タグと GitHub Release を作成（冪等） |
+| `audit-scan` | audit JSON を解析し脆弱性 Issue を管理 |
 
-## Usage
+## 使い方
 
 ```yaml
 jobs:
   release:
-    uses: rysk-tanaka/workflows/.github/workflows/release-on-version-change.yml@main
+    uses: >-
+      rysk-tanaka/workflows/.github/workflows/
+      release-on-version-change.yml@main
     secrets: inherit
 ```
 
-## Setup
+## セットアップ
 
-For private repos, go to **Settings > Actions > General > Access** and enable **"Accessible from repositories owned by the user 'rysk-tanaka'"**.
+プライベートリポジトリの場合は
+**Settings > Actions > General > Access** で
+**「Accessible from repositories owned by the user
+'rysk-tanaka'」** を有効にしてください。

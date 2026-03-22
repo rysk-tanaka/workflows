@@ -52,13 +52,13 @@ jobs:
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
 
       - name: Check for existing implementation PR
         id: guard
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         with:
           script: |
             const issueNumber = context.issue.number;
@@ -107,7 +107,7 @@ jobs:
 
       - name: Setup Node.js
         if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: ${{ inputs.node_version }}
           cache: ${{ inputs.package_manager }}
@@ -124,7 +124,7 @@ jobs:
 
       - name: Implement issue with Claude
         if: steps.guard.outputs.skip != 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@6062f3709600659be5e47fcddf2cf76993c235c2 # v1.0.76
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           allowed_bots: ${{ inputs.allowed_bots }}

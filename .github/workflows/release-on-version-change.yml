@@ -67,6 +67,16 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: rysk-tanaka/workflows
+          path: __actions
+          sparse-checkout: .github/actions
+      - name: Install local actions
+        shell: bash
+        run: |
+          cp -r __actions/.github/actions .github/
+          rm -rf __actions
       - uses: ./.github/actions/resolve-version
         id: resolve
         with:

@@ -38,6 +38,29 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Resolve prompt
+        id: resolve-prompt
+        env:
+          CUSTOM_PROMPT: ${{ inputs.prompt }}
+        run: |
+          {
+            echo 'prompt<<PROMPT_EOF'
+            if [ -n "$CUSTOM_PROMPT" ]; then
+              printf '%s\n' "$CUSTOM_PROMPT"
+            else
+              cat <<'INNER_EOF'
+          ユーザーのリクエストに日本語で対応してください。
+
+          回答の最後に、使用したモデル名と実際のトークン数、推定コストを計算して出力してください。
+
+          ---
+
+          形式: 🤖 モデル: [実際のモデル名] / 💰 コスト: 入力[N]トークン, 出力[M]トークン, $[金額]
+          INNER_EOF
+            fi
+            echo 'PROMPT_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@6062f3709600659be5e47fcddf2cf76993c235c2 # v1.0.76
@@ -50,11 +73,4 @@ jobs:
 
           claude_args: '--model ${{ inputs.claude_model }} --allowed-tools "Write,Bash(gh issue create --title * --body-file *),Bash(gh issue comment * --body-file *)" ${{ inputs.claude_args_extra }}'
 
-          prompt: ${{ inputs.prompt != '' && inputs.prompt || 'ユーザーのリクエストに日本語で対応してください。
-
-            回答の最後に、使用したモデル名と実際のトークン数、推定コストを計算して出力してください。
-
-
-            ---
-
-            形式: 🤖 モデル: [実際のモデル名] / 💰 コスト: 入力[N]トークン, 出力[M]トークン, $[金額]' }}
+          prompt: ${{ steps.resolve-prompt.outputs.prompt }}

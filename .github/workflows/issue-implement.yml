@@ -18,6 +18,11 @@ on:
         required: false
         default: ""
         type: string
+      setup_command:
+        description: "Command to run before Claude (e.g. install uv, setup Python)"
+        required: false
+        default: ""
+        type: string
       claude_args:
         description: "Full claude_args string"
         required: true
@@ -115,6 +120,10 @@ jobs:
       - name: Install dependencies
         if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
         run: ${{ inputs.install_command != '' && inputs.install_command || format('{0} install --frozen-lockfile', inputs.package_manager) }}
+
+      - name: Run setup command
+        if: steps.guard.outputs.skip != 'true' && inputs.setup_command != ''
+        run: ${{ inputs.setup_command }}
 
       - name: Configure git identity
         if: steps.guard.outputs.skip != 'true'

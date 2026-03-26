@@ -13,6 +13,7 @@
 | `issue-scan.yml` | Claude による open issue のトリアージ |
 | `issue-implement.yml` | Claude による issue の自動実装 |
 | `dependabot-scan.yml` | `pnpm audit` で脆弱性を検出し Issue 管理 |
+| `workflow-lint.yml` | actionlint + zizmor によるワークフロー静的解析（本リポジトリ専用） |
 
 ## Composite Actions
 

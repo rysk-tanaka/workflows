@@ -13,8 +13,8 @@ personal projects. Other repositories consume these via
 
 ### Reusable Workflows (`.github/workflows/`)
 
-All workflows use `on: workflow_call` only — they are called
-from other repos, not triggered directly.
+All workflows use `on: workflow_call` only (called from other
+repos), except `workflow-lint.yml` which runs directly in this repo.
 
 - **release-on-version-change.yml** — Detects version changes
   via `resolve-version` action, then creates a release via
@@ -29,6 +29,8 @@ from other repos, not triggered directly.
   `claude-implement` labeled issues, creates PRs
 - **dependabot-scan.yml** — Runs `pnpm audit`,
   creates/closes GitHub Issues per vulnerability
+- **workflow-lint.yml** — Runs actionlint + zizmor on `.github/**`
+  changes (push/PR, not reusable)
 
 ### Composite Actions (`.github/actions/`)
 
@@ -56,16 +58,23 @@ from other repos, not triggered directly.
 
 ## Validation
 
-No build, lint, or test commands exist. Validate workflow
-syntax with:
+No build or test commands exist. Validate workflows with
+static analysis:
 
 ```bash
-# Check YAML syntax
-gh workflow view <workflow-file> --repo rysk-tanaka/workflows
-
-# List recent runs
-gh run list --repo rysk-tanaka/workflows
+# Workflow syntax & security check
+actionlint
+zizmor .
 ```
+
+CI (`workflow-lint.yml`) runs both on push to main and PRs touching
+`.github/**`. Unlike other workflows in this repo, `workflow-lint.yml`
+uses `on: push` / `on: pull_request` — it is not a reusable
+workflow.
+
+ghalint is intentionally not adopted — its checks overlap
+with actionlint and zizmor, and its policy exclusion config
+lacks flexibility (only 4 policies are excludable).
 
 ## Conventions
 
@@ -73,3 +82,7 @@ gh run list --repo rysk-tanaka/workflows
   comment (e.g., `actions/checkout@<sha> # v6.0.2`)
 - Workflow prompts and issue comments are in Japanese
 - Commit messages in English, following Conventional Commits
+- Never use `${{ inputs.* }}` directly in `run:` blocks —
+  pass through `env:` to prevent template injection
+- Known zizmor exceptions are suppressed with inline comments
+  explaining the reason

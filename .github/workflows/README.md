@@ -50,6 +50,12 @@
 | --- | --- | --- | --- |
 | [dependabot-scan.yml] | `pnpm audit` で脆弱性を検出し Issue 起票・クローズ | `node_version`, `package_manager` | なし |
 
+## 静的解析
+
+| Workflow | 主目的 | 備考 |
+| --- | --- | --- |
+| [workflow-lint.yml] | actionlint + zizmor によるワークフロー構文・セキュリティチェック | `on: push` / `on: pull_request`（reusable ではない） |
+
 ## Composite Actions
 
 Workflow 内部で使用する composite action
@@ -124,6 +130,7 @@ Reusable workflow は `workflow_call` のみ受け付ける。
 [issue-scan.yml]: ./issue-scan.yml
 [issue-implement.yml]: ./issue-implement.yml
 [dependabot-scan.yml]: ./dependabot-scan.yml
+[workflow-lint.yml]: ./workflow-lint.yml
 [resolve-version]: ../actions/resolve-version/
 [release-core]: ../actions/release-core/
 [audit-scan]: ../actions/audit-scan/

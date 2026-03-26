@@ -12,5 +12,6 @@ runs:
     - name: Scan and create issues
       env:
         GH_TOKEN: ${{ github.token }}
+        AUDIT_FILE: ${{ inputs.audit_file }}
       shell: bash
-      run: bash "${{ github.action_path }}/audit-scan.sh" "${{ inputs.audit_file }}"
+      run: bash "${{ github.action_path }}/audit-scan.sh" "$AUDIT_FILE"

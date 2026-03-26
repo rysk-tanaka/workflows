@@ -83,6 +83,9 @@ lacks flexibility (only 4 policies are excludable).
 - Workflow prompts and issue comments are in Japanese
 - Commit messages in English, following Conventional Commits
 - Never use `${{ inputs.* }}` directly in `run:` blocks —
-  pass through `env:` to prevent template injection
+  pass through `env:` to prevent template injection.
+  Exception: inputs that are designed to be executed as
+  commands (e.g., `setup_command`) may use `${{ inputs.* }}`
+  directly with a `zizmor: ignore[template-injection]` comment
 - Known zizmor exceptions are suppressed with inline comments
   explaining the reason

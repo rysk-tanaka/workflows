@@ -124,16 +124,13 @@ jobs:
 
       - name: Install dependencies
         if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
-        env:
-          INSTALL_COMMAND: ${{ inputs.install_command }}
-          PACKAGE_MANAGER: ${{ inputs.package_manager }}
-        run: ${INSTALL_COMMAND:-"$PACKAGE_MANAGER" install --frozen-lockfile}
+        # zizmor: ignore[template-injection] caller-provided command, intentionally executed
+        run: ${{ inputs.install_command != '' && inputs.install_command || format('{0} install --frozen-lockfile', inputs.package_manager) }}
 
       - name: Run setup command
         if: steps.guard.outputs.skip != 'true' && inputs.setup_command != ''
-        env:
-          SETUP_COMMAND: ${{ inputs.setup_command }}
-        run: $SETUP_COMMAND
+        # zizmor: ignore[template-injection] caller-provided command, intentionally executed
+        run: ${{ inputs.setup_command }}
 
       - name: Configure git identity
         if: steps.guard.outputs.skip != 'true'

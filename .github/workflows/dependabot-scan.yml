@@ -30,9 +30,12 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Enable corepack
-        run: corepack enable ${{ inputs.package_manager }}
+        env:
+          PACKAGE_MANAGER: ${{ inputs.package_manager }}
+        run: corepack enable "$PACKAGE_MANAGER"
 
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
@@ -41,10 +44,16 @@ jobs:
           cache: ${{ inputs.package_manager }}
 
       - name: Install dependencies
-        run: ${{ inputs.package_manager }} install --frozen-lockfile
+        env:
+          PACKAGE_MANAGER: ${{ inputs.package_manager }}
+        run: |
+          "$PACKAGE_MANAGER" install --frozen-lockfile
 
       - name: Run audit
-        run: ${{ inputs.package_manager }} audit --json > audit-result.json || true
+        env:
+          PACKAGE_MANAGER: ${{ inputs.package_manager }}
+        run: |
+          "$PACKAGE_MANAGER" audit --json > audit-result.json || true
 
       - name: Verify audit output
         run: |

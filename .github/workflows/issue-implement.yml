@@ -60,6 +60,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Check for existing implementation PR
         id: guard
@@ -103,12 +104,16 @@ jobs:
 
       - name: Skip when implementation PR already exists
         if: steps.guard.outputs.skip == 'true'
+        env:
+          EXISTING_PR: ${{ steps.guard.outputs.existing_pr_number }}
         run: |
-          echo "Existing PR: #${{ steps.guard.outputs.existing_pr_number }}"
+          echo "Existing PR: #${EXISTING_PR}"
 
       - name: Enable corepack
         if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
-        run: corepack enable ${{ inputs.package_manager }}
+        env:
+          PACKAGE_MANAGER: ${{ inputs.package_manager }}
+        run: corepack enable "$PACKAGE_MANAGER"
 
       - name: Setup Node.js
         if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
@@ -119,11 +124,16 @@ jobs:
 
       - name: Install dependencies
         if: steps.guard.outputs.skip != 'true' && inputs.package_manager != 'none'
-        run: ${{ inputs.install_command != '' && inputs.install_command || format('{0} install --frozen-lockfile', inputs.package_manager) }}
+        env:
+          INSTALL_COMMAND: ${{ inputs.install_command }}
+          PACKAGE_MANAGER: ${{ inputs.package_manager }}
+        run: ${INSTALL_COMMAND:-"$PACKAGE_MANAGER" install --frozen-lockfile}
 
       - name: Run setup command
         if: steps.guard.outputs.skip != 'true' && inputs.setup_command != ''
-        run: ${{ inputs.setup_command }}
+        env:
+          SETUP_COMMAND: ${{ inputs.setup_command }}
+        run: $SETUP_COMMAND
 
       - name: Configure git identity
         if: steps.guard.outputs.skip != 'true'
@@ -135,7 +145,7 @@ jobs:
         if: steps.guard.outputs.skip != 'true'
         uses: anthropics/claude-code-action@6062f3709600659be5e47fcddf2cf76993c235c2 # v1.0.76
         with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # zizmor: ignore[secrets-outside-env]
           allowed_bots: ${{ inputs.allowed_bots }}
           claude_args: ${{ inputs.claude_args }}
           prompt: ${{ inputs.prompt }}
@@ -145,17 +155,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          JOB_STATUS: ${{ job.status }}
+          REPO_OWNER: ${{ github.repository_owner }}
         run: |
           if [ -s "$GITHUB_STEP_SUMMARY" ]; then
             SUMMARY_SIZE=$(wc -c < "$GITHUB_STEP_SUMMARY")
             if [ "$SUMMARY_SIZE" -le 65000 ]; then
-              gh issue comment "${{ github.event.issue.number }}" \
+              gh issue comment "$ISSUE_NUMBER" \
                 --body-file "$GITHUB_STEP_SUMMARY"
             else
-              gh issue comment "${{ github.event.issue.number }}" \
-                --body "実装レポート（サマリーが長すぎるため省略: ${{ job.status }}）。${RUN_URL} @${{ github.repository_owner }}"
+              gh issue comment "$ISSUE_NUMBER" \
+                --body "実装レポート（サマリーが長すぎるため省略: ${JOB_STATUS}）。${RUN_URL} @${REPO_OWNER}"
             fi
-          elif [ "${{ job.status }}" = "failure" ]; then
-            gh issue comment "${{ github.event.issue.number }}" \
-              --body "自動実装に失敗しました。${RUN_URL} @${{ github.repository_owner }}"
+          elif [ "$JOB_STATUS" = "failure" ]; then
+            gh issue comment "$ISSUE_NUMBER" \
+              --body "自動実装に失敗しました。${RUN_URL} @${REPO_OWNER}"
           fi

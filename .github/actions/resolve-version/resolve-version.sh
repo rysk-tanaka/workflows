@@ -26,7 +26,7 @@ extract_from_package_json() {
 extract_from_cargo_toml() {
   [ -f Cargo.toml ] || return 1
   awk '
-    /^\[package\]$/ { in_package = 1; next }
+    /^\[package\]$/ || /^\[workspace\.package\]$/ { in_package = 1; next }
     /^\[/ { in_package = 0 }
     in_package && /^version[[:space:]]*=/ {
       version = $0

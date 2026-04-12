@@ -73,7 +73,7 @@ jobs:
           persist-credentials: false
 
       - name: Scan open issues
-        uses: anthropics/claude-code-action@6062f3709600659be5e47fcddf2cf76993c235c2 # v1.0.76
+        uses: anthropics/claude-code-action@2ff1acb3ee319fa302837dad6e17c2f36c0d98ea # v1.0.91
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # zizmor: ignore[secrets-outside-env]
           claude_args: '--max-turns ${{ inputs.max_turns }} --model ${{ inputs.claude_model }} --allowed-tools "Write,Bash(gh issue list *),Bash(gh issue view *),Bash(gh issue comment * --body-file *),Bash(gh issue edit * --add-label *),Bash(gh label list *),Bash(gh label create *)"'

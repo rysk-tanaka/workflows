@@ -6,7 +6,7 @@ on:
       claude_model:
         description: "Claude model to use"
         required: false
-        default: claude-sonnet-4-6
+        default: claude-sonnet-5
         type: string
       prompt:
         description: "Override default prompt (empty = use built-in default)"

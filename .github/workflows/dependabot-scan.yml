@@ -64,6 +64,6 @@ jobs:
           fi
 
       - name: Scan and create issues
-        uses: ./.github/actions/audit-scan
+        uses: ./.github/actions/audit-scan # zizmor: ignore[self-repository] $/ is not supported by actionlint yet (rhysd/actionlint#711)
         with:
           audit_file: audit-result.json

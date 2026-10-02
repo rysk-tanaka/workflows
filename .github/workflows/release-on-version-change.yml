@@ -79,14 +79,14 @@ jobs:
         run: |
           cp -r __actions/.github/actions .github/
           rm -rf __actions
-      - uses: ./.github/actions/resolve-version
+      - uses: ./.github/actions/resolve-version # zizmor: ignore[self-repository] $/ is not supported by actionlint yet (rhysd/actionlint#711)
         id: resolve
         with:
           version_source: ${{ inputs.version_source }}
           version_file: ${{ inputs.version_file }}
           version_command: ${{ inputs.version_command }}
           tag_prefix: ${{ inputs.tag_prefix }}
-      - uses: ./.github/actions/release-core
+      - uses: ./.github/actions/release-core # zizmor: ignore[self-repository] $/ is not supported by actionlint yet (rhysd/actionlint#711)
         id: release
         with:
           tag: ${{ steps.resolve.outputs.tag }}

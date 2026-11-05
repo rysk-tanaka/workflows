@@ -44,7 +44,7 @@
   `claude_args` (required), `prompt` (required),
   `allowed_bots`, `timeout_minutes`
 - secrets: `CLAUDE_CODE_OAUTH_TOKEN`
-- issue の `author_association` が `OWNER` / `MEMBER` / `COLLABORATOR` のときのみ実行する
+- issue の `author_association` が `OWNER` / `COLLABORATOR` のときのみ実行する
   （それ以外はジョブをスキップ）
 
 ## 依存管理

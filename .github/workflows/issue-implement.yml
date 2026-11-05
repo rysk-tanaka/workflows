@@ -54,9 +54,9 @@ permissions:
 jobs:
   implement:
     # This job runs with write permissions and treats the issue body as its requirements,
-    # so only authors with repository access qualify. CONTRIBUTOR is excluded because it
-    # only means a past commit was merged, not that the author has write access.
-    if: contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    # so only authors with repository access qualify. CONTRIBUTOR and MEMBER are excluded
+    # because a merged commit or organization membership does not imply write access.
+    if: contains(fromJSON('["OWNER","COLLABORATOR"]'), github.event.issue.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: ${{ fromJSON(inputs.timeout_minutes) }}
     steps:

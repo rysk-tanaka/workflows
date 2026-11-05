@@ -36,6 +36,7 @@
 
 - inputs: `claude_model`, `max_turns`, `prompt`
 - secrets: `CLAUDE_CODE_OAUTH_TOKEN`
+- デフォルトの prompt はリポジトリオーナーが作成した issue のみを対象にする
 
 #### issue-implement.yml
 
@@ -43,6 +44,8 @@
   `claude_args` (required), `prompt` (required),
   `allowed_bots`, `timeout_minutes`
 - secrets: `CLAUDE_CODE_OAUTH_TOKEN`
+- issue の `author_association` が `OWNER` / `COLLABORATOR` のときのみ実行する
+  （それ以外はジョブをスキップ）
 
 ## 依存管理
 

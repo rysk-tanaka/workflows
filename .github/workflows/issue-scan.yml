@@ -22,7 +22,7 @@ on:
 
           ## 手順
 
-          1. `gh issue list --state open --json number,title,labels --limit 50` で open issue を取得
+          1. `gh issue list --state open --author ${{ github.repository_owner }} --json number,title,labels --limit 50` で open issue を取得
           2. 以下のラベルが付いている issue はスキップ: `claude-scanned`, `claude-implement`, `difficulty/easy`, `difficulty/medium`, `difficulty/hard`
           3. スキップ対象外の issue から最大3件を選び、各 issue の内容を `gh issue view <number>` で確認
           4. 各 issue を難易度判定する

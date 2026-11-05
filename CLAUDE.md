@@ -50,6 +50,9 @@ repos), except `workflow-lint.yml` which runs directly in this repo.
 - `issue-implement.yml` cannot modify `.github/workflows/`
   files (GitHub App token lacks `workflows` permission), so
   workflow changes are rated `difficulty/hard`
+- `issue-implement.yml` only runs for issues authored by
+  `OWNER` / `MEMBER` / `COLLABORATOR`. This is a job-level `if`,
+  not a prompt instruction, so issue content cannot bypass it
 - Issue labels are applied sequentially (not simultaneously)
   to avoid concurrency cancellation of `issue-implement`
   triggers

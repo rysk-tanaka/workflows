@@ -39,6 +39,60 @@ jobs:
     secrets: inherit
 ```
 
+## Renovate 共有プリセット
+
+リポジトリ直下の `default.json` は Renovate の共有プリセット。
+各リポジトリの `renovate.json` から次のように読み込む。
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>rysk-tanaka/workflows"],
+  "enabledManagers": ["cargo", "github-actions"]
+}
+```
+
+プリセットに含まれる設定は次のとおり。
+
+| 設定 | 値 |
+| --- | --- |
+| `extends` | `config:recommended`, `helpers:pinGitHubActionDigests` |
+| `minimumReleaseAge` | `3 days`（公開から 3 日経つまで更新 PR を作らない） |
+| `schedule` | `before 9am on saturday`（`timezone: Asia/Tokyo`） |
+| `labels` | `dependencies` |
+| `packageRules` | minor / patch を自動マージ |
+
+`enabledManagers`、パッケージのグループ化、特定パッケージの無効化など、
+リポジトリ固有の設定は各リポジトリの `renovate.json` に書く。
+`packageRules` はプリセットの後ろに追加されるので、
+プリセットの自動マージを一部のマネージャーだけ止めたい場合は次のように上書きする。
+
+```json
+{
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "automerge": false
+    }
+  ]
+}
+```
+
+### minimumReleaseAge の注意点
+
+- `lockFileMaintenance` には効かない。ロックファイルの更新はパッケージマネージャーに任せるため、
+  Renovate がリリース日時を確認できない。既定の `minimumReleaseAgeBehaviour=timestamp-required` では
+  `renovate/stability-days` チェックが pending のまま残るので、自動マージされず手動でのマージになる。
+  ロックファイル経由で入る間接依存の待ち時間は、パッケージマネージャー側の設定
+  （pnpm の `minimumReleaseAge` など）で補う
+- セキュリティ修正の更新は待ち時間なしで作られる
+- リリース日時を取得できないレジストリ（ghcr.io など）の依存は、既定では更新 PR が作られない
+
+### プリセット変更時の確認
+
+`default.json` の変更は、読み込んでいるすべてのリポジトリに次回の Renovate 実行から反映される。
+変更後は各リポジトリの Dependency Dashboard や Renovate のログで、設定が意図どおり読み込まれていることを確認する。
+
 ## セットアップ
 
 プライベートリポジトリの場合は

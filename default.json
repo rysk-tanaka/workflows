@@ -17,6 +17,12 @@
       "matchUpdateTypes": ["digest"],
       "minimumReleaseAge": null,
       "automerge": true
+    },
+    {
+      "description": "Lock file maintenance carries no release timestamp either, so minimumReleaseAge would keep renovate/stability-days pending forever. The package manager holds back new releases instead (pnpm's minimumReleaseAge, uv's exclude-newer); Cargo has no such setting, so repositories with Cargo turn off its lock file maintenance",
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "minimumReleaseAge": null,
+      "automerge": true
     }
   ],
   "customManagers": [

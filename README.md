@@ -61,7 +61,7 @@ jobs:
 | `schedule` | `before 9am on saturday` |
 | `timezone` | `Asia/Tokyo` |
 | `labels` | `dependencies` |
-| `packageRules` | minor / patch を自動マージ、`rysk-tanaka/workflows` の digest 更新を自動マージ |
+| `packageRules` | minor / patch を自動マージ、`rysk-tanaka/workflows` の digest 更新を自動マージ、ロックファイル更新（`lockFileMaintenance`）を自動マージ |
 
 `rysk-tanaka/workflows` の reusable workflow は `@<main のコミット SHA> # main` で固定して呼び出すため、
 更新は digest 更新になり minor / patch のルールでは自動マージされない。
@@ -70,6 +70,32 @@ jobs:
 pending のまま自動マージされないため、このルールでは `minimumReleaseAge` を外している。
 自動マージを止めたいリポジトリでは、`matchDepNames: ["rysk-tanaka/workflows"]` に
 `automerge: false` を指定して上書きする。更新 PR 自体を止める場合は `enabled: false` を指定する。
+
+### ロックファイル更新の自動マージ
+
+ロックファイル更新はプリセットでは有効にしていない。各リポジトリで `"lockFileMaintenance": { "enabled": true }` を
+指定すると、毎週月曜の朝に PR が作られ、CI が通れば自動マージされる。
+ロックファイル更新にもリリース日時がないため、このルールでも `minimumReleaseAge` を外している。
+公開直後の版を避ける役目は、パッケージマネージャー側の設定が担う。
+
+| マネージャー | 設定 |
+| --- | --- |
+| pnpm | `pnpm-workspace.yaml` に `minimumReleaseAge: 4320`（分） |
+| uv | `pyproject.toml` の `[tool.uv]` に `exclude-newer = "3 days"` |
+| Cargo | 待ち時間を設定できないので、ロックファイル更新を止める |
+
+Cargo を含むリポジトリでは、Cargo の分だけ止める。
+直接の依存は通常の更新 PR（`minimumReleaseAge` が効く）で上がり、
+推移的な依存の脆弱性は cargo-deny で検出してから手で更新する。
+
+```json
+{
+  "lockFileMaintenance": { "enabled": true },
+  "cargo": { "lockFileMaintenance": { "enabled": false } }
+}
+```
+
+上の設定がないマネージャーでロックファイル更新を有効にすると、公開直後の版がそのまま自動マージされる。
 
 `enabledManagers`、パッケージのグループ化、特定パッケージの無効化など、
 リポジトリ固有の設定は各リポジトリの `renovate.json` に書く。

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Shared Renovate preset for rysk-tanaka repositories",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "labels": ["dependencies"],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["before 9am on saturday"],
+  "minimumReleaseAge": "3 days",
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "Callers pin these reusable workflows to a main commit SHA, so updates arrive as digest updates that the minor/patch rule does not cover. Digests of a branch carry no release timestamp, so minimumReleaseAge would keep renovate/stability-days pending forever",
+      "matchDepNames": ["rysk-tanaka/workflows"],
+      "matchUpdateTypes": ["digest"],
+      "minimumReleaseAge": null,
+      "automerge": true
+    }
+  ]
+}

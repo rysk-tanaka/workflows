@@ -29,7 +29,7 @@ on:
         default: true
         type: boolean
       track_progress:
-        description: "Track progress of the review"
+        description: "Track progress of the review (always on for labeled events, or the summary is not posted)"
         required: false
         default: true
         type: boolean
@@ -143,7 +143,10 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # zizmor: ignore[secrets-outside-env]
           allowed_bots: ${{ inputs.allowed_bots }}
-          track_progress: ${{ inputs.track_progress }}
+          # With a prompt and track_progress false the action runs in agent mode, which creates no
+          # tracking comment, so the review summary is never posted. Callers once passed false for
+          # labeled because track_progress rejected it before v1.0.188; force it on for that event.
+          track_progress: ${{ inputs.track_progress || github.event.action == 'labeled' }}
           use_sticky_comment: ${{ inputs.use_sticky_comment }}
           # The write-permission check covers only the actor who triggered the review. Comments
           # from anyone else on a public repository would otherwise reach Claude as context.

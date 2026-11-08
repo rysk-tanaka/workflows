@@ -44,7 +44,7 @@
 
 - inputs: `package_manager`,
   `claude_args` (required), `prompt` (required),
-  `allowed_bots`, `timeout_minutes`
+  `allowed_bots`, `timeout_minutes`, `subprocess_env_scrub`
 - secrets: `CLAUDE_CODE_OAUTH_TOKEN`
 - issue の `author_association` が `OWNER` / `COLLABORATOR` のときのみ実行する
   （それ以外はジョブをスキップ）
@@ -164,8 +164,9 @@ issue-implement は Claude のトークンと `contents: write` の `GITHUB_TOKE
 - Claude が新しい依存を足す PR は、マージ前に追加されたクレート・パッケージを確認する
 
 `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` にすると、サブプロセスから Anthropic のトークンなどを消せる。
-ただし GitHub のトークンは残り、Linux では Bash がサンドボックス内で動くようになるため、
-`cargo build` や `git push` への影響を確かめるまでは使っていない。
+ただし GitHub のトークンは残り、Linux では Bash がサンドボックス内で動くようになる。
+issue-implement では `subprocess_env_scrub: true` で有効にできるが、
+`cargo build` や `git push` への影響を確かめている段階なので、既定はオフにしている。
 
 ## claude-code-action の権限メモ
 

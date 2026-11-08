@@ -41,6 +41,11 @@ on:
         required: false
         default: 30
         type: number
+      subprocess_env_scrub:
+        description: "Strip credentials from Claude's subprocesses and sandbox Bash on Linux (experimental)"
+        required: false
+        default: false
+        type: boolean
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         required: true
@@ -146,9 +151,25 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      # claude-code-action prepares the subprocess sandbox only when allowed_non_write_users is set,
+      # so do the same here when the scrub is turned on through the input.
+      - name: Install subprocess isolation dependencies
+        if: steps.guard.outputs.skip != 'true' && inputs.subprocess_env_scrub && runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends bubblewrap socat
+          # Ubuntu 24.04+ restricts unprivileged user namespaces through AppArmor.
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - name: Implement issue with Claude
         if: steps.guard.outputs.skip != 'true'
         uses: anthropics/claude-code-action@4845bacbb38b3c4b15d948f035349786f678e068 # v1.0.267
+        env:
+          # A job that calls a reusable workflow cannot set env, so callers opt in through an input.
+          # Build scripts run by cargo or pnpm would otherwise see Claude's OAuth token.
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: ${{ inputs.subprocess_env_scrub && '1' || '' }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # zizmor: ignore[secrets-outside-env]
           allowed_bots: ${{ inputs.allowed_bots }}

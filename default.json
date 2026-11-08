@@ -18,5 +18,17 @@
       "minimumReleaseAge": null,
       "automerge": true
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the commit SHA that pins this preset in extends. Without a pin, Renovate reads default.json from main on every run, so a rewritten main would change every repository's config before the schedule allows it",
+      "managerFilePatterns": ["/(^|/)renovate\\.json5?$/", "/(^|/)\\.renovaterc(\\.json5?)?$/"],
+      "matchStrings": ["\"github>rysk-tanaka/workflows#(?<currentDigest>[0-9a-f]{40})\""],
+      "depNameTemplate": "rysk-tanaka/workflows",
+      "packageNameTemplate": "https://github.com/rysk-tanaka/workflows",
+      "currentValueTemplate": "main",
+      "datasourceTemplate": "git-refs"
+    }
   ]
 }

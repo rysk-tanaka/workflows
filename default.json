@@ -10,6 +10,13 @@
     {
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
+    },
+    {
+      "description": "Callers pin these reusable workflows to a main commit SHA, so updates arrive as digest updates that the minor/patch rule does not cover. Digests of a branch carry no release timestamp, so minimumReleaseAge would keep renovate/stability-days pending forever",
+      "matchDepNames": ["rysk-tanaka/workflows"],
+      "matchUpdateTypes": ["digest"],
+      "minimumReleaseAge": null,
+      "automerge": true
     }
   ]
 }

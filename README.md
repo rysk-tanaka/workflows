@@ -60,7 +60,15 @@ jobs:
 | `minimumReleaseAge` | `3 days`（公開から 3 日経つまで更新 PR を作らない） |
 | `schedule` | `before 9am on saturday`（`timezone: Asia/Tokyo`） |
 | `labels` | `dependencies` |
-| `packageRules` | minor / patch を自動マージ |
+| `packageRules` | minor / patch を自動マージ、`rysk-tanaka/workflows` の digest 更新を自動マージ |
+
+`rysk-tanaka/workflows` の reusable workflow は `@<main のコミット SHA> # main` で固定して呼び出すため、
+更新は digest 更新になり minor / patch のルールでは自動マージされない。
+そのため digest 更新を自動マージするルールを別に入れている。
+ブランチの digest にはリリース日時がなく、`minimumReleaseAge` を残すと `renovate/stability-days` が
+pending のまま自動マージされないため、このルールでは `minimumReleaseAge` を外している。
+自動マージを止めたいリポジトリでは、`matchDepNames: ["rysk-tanaka/workflows"]` に
+`automerge: false`（または `enabled: false`）を指定して上書きする。
 
 `enabledManagers`、パッケージのグループ化、特定パッケージの無効化など、
 リポジトリ固有の設定は各リポジトリの `renovate.json` に書く。

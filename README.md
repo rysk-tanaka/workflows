@@ -96,14 +96,18 @@ main を書き換えられると、スケジュールや `minimumReleaseAge` を
 
 ```json
 {
-  "extends": ["github>rysk-tanaka/workflows#<main のコミット SHA>"]
+  "extends": ["github>rysk-tanaka/workflows#<main のコミット SHA（40 桁）>"],
+  "enabledManagers": ["github-actions", "custom.regex"]
 }
 ```
 
 - `#` の後ろの値は GitHub の Contents API に `ref` として渡されるため、コミット SHA も使える。
   ただし Renovate のドキュメントに書かれているのはタグだけで、SHA の指定は記載のない使い方になる
 - タグ（`#v1` など）は付け替えられるので、main を書き換えられる相手には固定の効果がない
-- 固定した SHA は Renovate が自動では更新しないため、プリセットを変えたら各リポジトリで手動で上げる
+- 固定した SHA は、プリセットの customManager が main の digest 更新として追いかける。
+  `enabledManagers` を指定しているリポジトリでは、`custom.regex` を加えないとこの更新が動かない
+- この更新も `rysk-tanaka/workflows` の digest 更新なので、reusable workflow の更新と同じく
+  スケジュールに沿って自動マージされる。新しい SHA の設定が効くのはマージした後になる
 
 ### minimumReleaseAge の注意点
 

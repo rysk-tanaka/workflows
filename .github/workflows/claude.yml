@@ -18,6 +18,11 @@ on:
         required: false
         default: ""
         type: string
+      include_comments_by_actor:
+        description: "Comma-separated comment authors passed to Claude as context (empty = repository owner and bots)"
+        required: false
+        default: ""
+        type: string
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         required: true
@@ -73,6 +78,9 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # zizmor: ignore[secrets-outside-env]
           track_progress: true
+          # The write-permission check covers only the actor who mentioned @claude. Comments
+          # from anyone else on a public repository would otherwise reach Claude as context.
+          include_comments_by_actor: ${{ inputs.include_comments_by_actor != '' && inputs.include_comments_by_actor || format('{0},*[bot]', github.repository_owner) }}
 
           additional_permissions: |
             actions: read

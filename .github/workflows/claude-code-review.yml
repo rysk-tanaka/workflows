@@ -33,6 +33,11 @@ on:
         required: false
         default: true
         type: boolean
+      include_comments_by_actor:
+        description: "Comma-separated comment authors passed to Claude as context (empty = repository owner and bots)"
+        required: false
+        default: ""
+        type: string
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         required: true
@@ -140,5 +145,8 @@ jobs:
           allowed_bots: ${{ inputs.allowed_bots }}
           track_progress: ${{ inputs.track_progress }}
           use_sticky_comment: ${{ inputs.use_sticky_comment }}
+          # The write-permission check covers only the actor who triggered the review. Comments
+          # from anyone else on a public repository would otherwise reach Claude as context.
+          include_comments_by_actor: ${{ inputs.include_comments_by_actor != '' && inputs.include_comments_by_actor || format('{0},*[bot]', github.repository_owner) }}
           prompt: ${{ steps.resolve-prompt.outputs.prompt }}
           claude_args: '--model ${{ inputs.claude_model }} --allowed-tools "mcp__github_inline_comment__create_inline_comment,Bash(gh api *),Bash(gh issue view *),Bash(gh search *),Bash(gh issue list *),Bash(gh pr diff *),Bash(gh pr view *),Bash(gh pr list *)" ${{ inputs.claude_args_extra }}'

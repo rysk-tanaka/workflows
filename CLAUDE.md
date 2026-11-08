@@ -53,6 +53,10 @@ repos), except `workflow-lint.yml` which runs directly in this repo.
 - `issue-implement.yml` only runs for issues authored by
   `OWNER` / `COLLABORATOR`. This is a job-level `if`,
   not a prompt instruction, so issue content cannot bypass it
+- `claude.yml` / `claude-code-review.yml` pass only comments by
+  the repository owner and bots to Claude by default
+  (`include_comments_by_actor`). The action's write-permission
+  check covers the triggering actor only, not other commenters
 - Issue labels are applied sequentially (not simultaneously)
   to avoid concurrency cancellation of `issue-implement`
   triggers

@@ -86,6 +86,24 @@ pending のまま自動マージされないため、このルールでは `mini
 }
 ```
 
+### プリセットのコミット SHA 固定
+
+`github>rysk-tanaka/workflows` と書くと、Renovate は実行のたびに main にある `default.json` を読む。
+main を書き換えられると、スケジュールや `minimumReleaseAge` を外した設定がすべてのリポジトリに
+次の実行から効き、reusable workflow を SHA で固定して確保した待ち時間がなくなる。
+これを避けるには、`#` の後ろにコミット SHA を書いてプリセットを固定する。
+
+```json
+{
+  "extends": ["github>rysk-tanaka/workflows#<main のコミット SHA>"]
+}
+```
+
+- `#` の後ろの値は GitHub の Contents API に `ref` として渡されるため、コミット SHA も使える。
+  ただし Renovate のドキュメントに書かれているのはタグだけで、SHA の指定は記載のない使い方になる
+- タグ（`#v1` など）は付け替えられるので、main を書き換えられる相手には固定の効果がない
+- 固定した SHA は Renovate が自動では更新しないため、プリセットを変えたら各リポジトリで手動で上げる
+
 ### minimumReleaseAge の注意点
 
 - `lockFileMaintenance` には効かない。ロックファイルの更新はパッケージマネージャーに任せるため、
@@ -98,7 +116,7 @@ pending のまま自動マージされないため、このルールでは `mini
 
 ### プリセット変更時の確認
 
-`default.json` の変更は、読み込んでいるすべてのリポジトリに次回の Renovate 実行から反映される。
+`default.json` の変更は、SHA で固定せずに読み込んでいるリポジトリには次回の Renovate 実行から反映される。
 変更後は各リポジトリの Dependency Dashboard や Renovate のログで、設定が意図どおり読み込まれていることを確認する。
 
 ## セットアップ

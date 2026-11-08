@@ -57,8 +57,9 @@ jobs:
 | 設定 | 値 |
 | --- | --- |
 | `extends` | `config:recommended`, `helpers:pinGitHubActionDigests` |
-| `minimumReleaseAge` | `3 days`（公開から 3 日経つまで更新 PR を作らない） |
-| `schedule` | `before 9am on saturday`（`timezone: Asia/Tokyo`） |
+| `minimumReleaseAge` | `3 days`。公開から 3 日経つまで更新 PR を作らない |
+| `schedule` | `before 9am on saturday` |
+| `timezone` | `Asia/Tokyo` |
 | `labels` | `dependencies` |
 | `packageRules` | minor / patch を自動マージ、`rysk-tanaka/workflows` の digest 更新を自動マージ |
 
@@ -68,7 +69,7 @@ jobs:
 ブランチの digest にはリリース日時がなく、`minimumReleaseAge` を残すと `renovate/stability-days` が
 pending のまま自動マージされないため、このルールでは `minimumReleaseAge` を外している。
 自動マージを止めたいリポジトリでは、`matchDepNames: ["rysk-tanaka/workflows"]` に
-`automerge: false`（または `enabled: false`）を指定して上書きする。
+`automerge: false` を指定して上書きする。更新 PR 自体を止める場合は `enabled: false` を指定する。
 
 `enabledManagers`、パッケージのグループ化、特定パッケージの無効化など、
 リポジトリ固有の設定は各リポジトリの `renovate.json` に書く。
@@ -109,10 +110,10 @@ main を書き換えられると、スケジュールや `minimumReleaseAge` を
 - `lockFileMaintenance` には効かない。ロックファイルの更新はパッケージマネージャーに任せるため、
   Renovate がリリース日時を確認できない。既定の `minimumReleaseAgeBehaviour=timestamp-required` では
   `renovate/stability-days` チェックが pending のまま残るので、自動マージされず手動でのマージになる。
-  ロックファイル経由で入る間接依存の待ち時間は、パッケージマネージャー側の設定
-  （pnpm の `minimumReleaseAge` など）で補う
+  ロックファイル経由で入る間接依存の待ち時間は、pnpm の `minimumReleaseAge` など
+  パッケージマネージャー側の設定で補う
 - セキュリティ修正の更新は待ち時間なしで作られる
-- リリース日時を取得できないレジストリ（ghcr.io など）の依存は、既定では更新 PR が作られない
+- ghcr.io などリリース日時を取得できないレジストリの依存は、既定では更新 PR が作られない
 
 ### プリセット変更時の確認
 

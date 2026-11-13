@@ -165,7 +165,7 @@ jobs:
 
       - name: Implement issue with Claude
         if: steps.guard.outputs.skip != 'true'
-        uses: anthropics/claude-code-action@4845bacbb38b3c4b15d948f035349786f678e068 # v1.0.267
+        uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1.0.271
         env:
           # A job that calls a reusable workflow cannot set env, so callers opt in through an input.
           # Build scripts run by cargo or pnpm would otherwise see Claude's OAuth token.
